@@ -13,13 +13,25 @@ function kill_kodi(){
 
 function start_kodi(){
 	echo "Restarting kodi"
+	#rm -f /tmp/moonlight-running
 	if systemctl list-units | grep -q kodi; then
 		systemctl --no-block start kodi
 	else
-		kodi-standalone &
-		disown
+		echo "restart you session to also restart kodi"
 	fi
 }
+
+function start_moonlight() {
+echo "Starting moonlight"
+	if systemctl list-units | grep -q kodi; then
+		moonlight stream $@ 
+	else
+		echo "stream $@" > /tmp/moonlight-running
+		echo "relying on your greeter script to start moonlight!"
+		exit 0
+	fi
+}
+
 
 # Get optional arguments/flags (should be specified before standard arguments)
 optstring=':qi:c:'
@@ -65,8 +77,7 @@ else
 fi
 
 kill_kodi # Must close kodi for proper video display
-
-echo "Starting moonlight"
-moonlight stream -"$res" -fps "$fps" -bitrate "$bitrate" "$quitflag" $customflag -app "$game" "$hostip"
-
+pidwait kodi
+start_moonlight -"$res" -fps "$fps" -bitrate "$bitrate" "$quitflag" $customflag -app "$game" "$hostip"
+pidwait moonlight 
 start_kodi # Reopen kodi
